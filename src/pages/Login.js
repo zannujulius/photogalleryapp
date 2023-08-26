@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
-
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { postLogin } from "../redux/action/auth.action";
 const Login = () => {
   const googleAuth = () => {
     window.open(
@@ -7,6 +9,12 @@ const Login = () => {
       "_self"
     );
   };
+  const dispatch = useDispatch();
+  useEffect(() => {
+    dispatch(postLogin());
+    return () => {};
+  }, []);
+
   return (
     <div className="w-screen h-screen bg-[#f1f1f1] flex items-center justify-center">
       <div className="w-[400px] h-[500px] bg-white rounded-md shadow-sm p-10">
