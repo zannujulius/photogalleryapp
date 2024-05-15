@@ -1,19 +1,65 @@
-import { Link } from "react-router-dom";
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { postLogin } from "../redux/action/auth.action";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  postAuthLoading,
+  postLogin,
+  postLoginGoogle,
+  postLoginSucces,
+} from "../redux/action/auth.action";
+import axios from "axios";
+
 const Login = () => {
-  const googleAuth = () => {
-    window.open(
-      `${process.env.REACT_APP_API_URL}/auth/google/callback`,
-      "_self"
-    );
-  };
+  const [email, setemail] = useState("");
+  const [password, setpassword] = useState("");
   const dispatch = useDispatch();
+  let navigate = useNavigate();
+  const { authState, authFailure, authLoading } = useSelector(
+    (state) => state.auth
+  );
+  const [searchParams] = useSearchParams();
+  const authenticated = searchParams.get("authenticated"); // "testCode"
+  const googleAuth = () => {
+    dispatch(postLoginGoogle());
+  };
+
+  const getUser = async () => {
+    try {
+      const url = `${process.env.REACT_APP_API_URL}/auth/login/success`;
+      const { data } = await axios.get(url, { withCredentials: true });
+      if (data?.data?.token) {
+        dispatch(postLoginSucces());
+        return;
+      }
+      console.log(data, "user data");
+    } catch (error) {
+      console.log(error, "got error");
+    }
+  };
+
+  const handleLogin = () => {
+    if (!(email && password)) {
+      alert("Please provide both fields");
+      return;
+    }
+    dispatch(postLogin({ email, password }));
+  };
+
   useEffect(() => {
-    dispatch(postLogin());
+    if (authState) {
+      navigate("/");
+    }
+    if (authenticated) {
+      getUser();
+    }
+
     return () => {};
-  }, []);
+  }, [authState]);
 
   return (
     <div className="w-screen h-screen bg-[#f1f1f1] flex items-center justify-center">
@@ -23,22 +69,31 @@ const Login = () => {
         <hr className="" />
         <div className="w-full mt-8">
           <input
-            className="border-[1px] bg-blue-200 mb-6 placeholder:font-light px-2 border-[#a1a1a1] w-full h-[41px] rounded-sm focus:outline-none"
+            value={email}
+            onChange={(e) => setemail(e.target.value)}
+            className="border-[1px] bg-blue-50 mb-6 placeholder:font-light px-2 border-[#a1a1a1] w-full h-[41px] rounded-sm focus:outline-none"
             type="text"
             placeholder="Enter your email.."
           />
           <input
-            className="border-[1px] bg-blue-200 mb-6 placeholder:font-light px-2 border-[#a1a1a1] w-full h-[41px] rounded-sm focus:outline-none"
+            className="border-[1px] bg-blue-50 mb-6 placeholder:font-light px-2 border-[#a1a1a1] w-full h-[41px] rounded-sm focus:outline-none"
             type="password"
+            value={password}
+            onChange={(e) => setpassword(e.target.value)}
             placeholder="Enter your password.."
           />
         </div>
-        <button className="block h-[41px] bg-[#0f0f0f] w-full rounded-sm text-white">
-          Login
+        <button
+          disabled={authLoading}
+          onClick={handleLogin}
+          className="block h-[41px] bg-[#0f0f0f] w-full rounded-sm text-white"
+        >
+          {authLoading ? "Loading" : "Login"}
         </button>
 
         <div className="w-full my-4">
           <button
+            disabled={authLoading}
             className="flex px-4 items-center justify-center h-[41px]  border-[1px] bg-[white] w-full rounded-md "
             onClick={googleAuth}
           >
